@@ -35,7 +35,7 @@ public class RestService {
 
 
     /**
-     *返回单个dto 。get方式获取
+     *返回单个dto 。get方式获取.
      * @return 返回JSONEntiy对象
      */
     @RequestMapping("/getOrder")
