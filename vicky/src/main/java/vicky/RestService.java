@@ -17,6 +17,7 @@ import java.util.*;
 
 /**
  * 该类为服务的提供方，提供者
+ * @author vicky
  */
 @RestController
 @RequestMapping("/")
@@ -32,8 +33,6 @@ public class RestService {
     {
         return "vicky";
     }
-
-
     /**
      *返回单个dto 。get方式获取.
      * @return 返回JSONEntiy对象
@@ -42,7 +41,6 @@ public class RestService {
     public JSONEntity getOrder()
     {
         JSONEntity entity = new JSONEntity();
-
         try {
             Order order = CreasteData.createOrder();
             entity.setStatus(200);
@@ -54,6 +52,7 @@ public class RestService {
          entity.setErrors("业务出错");
          log.error("getOrder",e);
      }
+     System.out.println("服务端方法已经调用＝＝＝＝＝＝＝＝＝＝＝＝＝");
           return entity;
     }
 
@@ -131,7 +130,6 @@ public class RestService {
             List order = CreasteData.createOrders();
             entity.setStatus(200);
             entity.setData(order);
-
             String entitystr=  GZIP.compress(entity.toString());
             return entitystr;
 
@@ -167,6 +165,37 @@ public class RestService {
 
         return entity;
     }
+
+
+    /**
+     *
+     *传递复杂类型，map中key类型相同，value类型不同
+     * @return
+     */
+    @RequestMapping("/getOrdersForMapContainsList")
+    public JSONEntity getOrdersForMapContainsList()
+    {
+
+        JSONEntity entity = new JSONEntity();
+
+        try {
+            //createOrdersForMap1构造数据对象
+            Map order = CreasteData.createOrdersForMap1();
+            entity.setStatus(200);
+            entity.setData(order);
+
+        }catch(Exception e)
+        {
+            entity.setStatus(500);
+            entity.setErrors("业务出错");
+            log.error("getOrdersForMap",e);
+
+        }
+
+        return entity;
+
+    }
+
 
     /**
      * 该方法目的是为了展示RequestMapping注解的属性，此外，展示@RequestBody直接接收提交的对象

@@ -11,14 +11,14 @@ public class RestClientProperties {
 
 
       private boolean enabled=true;
-     private int poolingHttpClientConnectionManager=30;
+     private int poolingHttpClientConnectionManager=3;
       private int maxTotal=100;
       private int defaultMaxPerRout=50;
      private int retryHandler=3;
       private int connectTimeout=5000;
      private int readTimeout=5000;
     private int connectionRequestTimeout=200;
-     private boolean buggerRequestBody=false;
+     private boolean bufferRequestBody=false;
 
 
     public boolean isEnabled() {
@@ -85,11 +85,11 @@ public class RestClientProperties {
         this.connectionRequestTimeout = connectionRequestTimeout;
     }
 
-    public boolean isBuggerRequestBody() {
-        return buggerRequestBody;
+    public boolean isBufferRequestBody() {
+        return bufferRequestBody;
     }
 
-    public void setBuggerRequestBody(boolean buggerRequestBody) {
-        this.buggerRequestBody = buggerRequestBody;
+    public void setBufferRequestBody(boolean buggerRequestBody) {
+        this.bufferRequestBody = bufferRequestBody;
     }
 }

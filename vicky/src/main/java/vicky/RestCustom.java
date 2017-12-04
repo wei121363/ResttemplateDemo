@@ -1,6 +1,9 @@
 package vicky;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import sun.awt.datatransfer.DataTransferer;
 import vicky.Data.Order;
 import vicky.Data.ReceiveOrder;
 import vicky.util.GZIP;
@@ -34,6 +38,7 @@ import java.util.*;
 
 /**
  * 该类为示例的服务调用放，请求者
+ * @author vicky
  */
 @ConfigurationProperties(prefix = "server")
 @RestController
@@ -54,6 +59,20 @@ public class RestCustom {
 
     @Autowired
     RestTemplate rs;
+
+    @RequestMapping("/add80")
+
+    public String add80()
+    {
+        UriComponents uriComponents = UriComponentsBuilder.fromUriString(
+                "http://USERMANAGE/usermanage/"+"update").build();
+
+        URI uri = uriComponents.encode().toUri();
+
+        String obj= rs.postForObject(uri,null,String.class);
+
+        return obj;
+    }
 
 
 
@@ -89,8 +108,8 @@ public class RestCustom {
 
             JSONEntity obj= rs.getForObject(uri,JSONEntity.class);
             //处理dto的集合
-
             List obj1=(List)TransferData.getInstance().transferData(obj,ReceiveOrder.class);
+
             return TransferData.getInstance().getMapper().writeValueAsString(obj1);
         }catch(Exception e)
         {
@@ -146,6 +165,7 @@ public class RestCustom {
             JSONEntity obj= rs.getForObject(uri,JSONEntity.class);
             //处理map集合存放dto
             Map obj1=(Map)TransferData.getInstance().transferData(obj,Long.class,ReceiveOrder.class);
+
             return  TransferData.getInstance().getMapper().writeValueAsString(obj1);
 
         }catch(Exception e)
@@ -155,6 +175,43 @@ public class RestCustom {
         return null;
 
     }
+
+
+
+    @RequestMapping("/ordersForMapContainsList")
+    public String ordersForMapContainsList()
+    {
+        try{
+
+            UriComponents uriComponents = UriComponentsBuilder.fromUriString(
+                    host+"getOrdersForMapContainsList").build();
+            URI uri = uriComponents.encode().toUri();
+            JSONEntity obj= rs.getForObject(uri,JSONEntity.class);
+            //处理map集合存放dto
+            Map<Long,Object> obj1=(Map)TransferData.getInstance().transferData(obj,Long.class,Object.class);
+             for (Map.Entry<Long, Object> entry : obj1.entrySet()) {
+                 //用户应该知道key对应的value是什么内容类型（集合/dto/简单类型）
+                   if(entry.getKey()==1L)
+                   {
+                      List<ReceiveOrder> dtos=(List)TransferData.getInstance().transferData(entry.getValue(),ReceiveOrder.class);
+                      System.out.println("dtos:"+dtos.size());
+                   }
+                   if(entry.getKey()==2L)
+                   {
+                       System.out.println(entry.getValue());
+                   }
+             }
+            return  TransferData.getInstance().getMapper().writeValueAsString(obj1);
+
+        }catch(Exception e)
+        {
+            log.error("ordersForMap:",e);
+        }
+        return null;
+
+    }
+
+
     @RequestMapping(value="/add")
     public String add() throws JsonProcessingException {
         try {

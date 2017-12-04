@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
+
+/**
+ * @author vicky
+ * 数据转换类json转dto
+ */
 public interface ITransferData {
 
 

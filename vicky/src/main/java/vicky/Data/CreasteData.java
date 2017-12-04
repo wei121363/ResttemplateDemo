@@ -1,5 +1,7 @@
 package vicky.Data;
 
+import vicky.util.JSONEntity;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -126,9 +128,10 @@ public class CreasteData {
 
 
             Map orders = new HashMap();
+
             orders.put(order.getId(), order);
-            orders.put(order.getId(), order1);
-            return orders;
+            orders.put(order1.getId(), order1);
+             return orders;
         }else
         {
             Map orders=(Map) values.get("orderForMap");
@@ -136,4 +139,39 @@ public class CreasteData {
         }
 
     }
+
+    public static Map createOrdersForMap1()
+    {
+     List list=new ArrayList();
+
+        Order order = new Order();
+        order.setId(1L);
+        order.setStatus(true);
+        order.setDetail("电脑");
+        order.setUpdatetime(new Timestamp(System.currentTimeMillis()));
+        order.setCreateDay(new Date(System.currentTimeMillis()));
+        order.setNum(new Integer(100));
+        order.setMat(new BigDecimal(1.1));
+        list.add(order);
+
+        Order order1 = new Order();
+        order1.setId(2L);
+        order1.setStatus(false);
+        order1.setDetail("苹果电脑");
+        order1.setUpdatetime(new Timestamp(System.currentTimeMillis()));
+        order1.setCreateDay(new Date(System.currentTimeMillis()));
+        order1.setNum(new Integer(200));
+        order1.setMat(new BigDecimal(2.2));
+        order.setChild(order1);
+        list.add(order1);
+
+        Map orders = new HashMap();
+
+        orders.put(order.getId(), list);
+        orders.put(2L, "abcdefg");
+
+        return orders;
+    }
+
+
 }
