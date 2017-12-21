@@ -13,7 +13,12 @@ import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.protocol.HttpContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -21,10 +26,15 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
+import org.springframework.http.client.AsyncClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
+import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
@@ -49,6 +59,8 @@ public class RestClient {
 
     @Bean
     @LoadBalanced
+    @Scope("prototype")
+    @Lazy
     RestTemplate build() throws Exception{
 
         RestTemplate restTemplate;
@@ -127,9 +139,57 @@ public class RestClient {
         restTemplate.setMessageConverters(messageConverters);
          restTemplate.setRequestFactory(httpComponentsClientHttpRequestFactory);
         restTemplate.setErrorHandler(new DefaultResponseErrorHandler());
+        AsyncRestTemplate template = new AsyncRestTemplate();
 
-     //log.info("RestClient初始化环境");
+
+
+
      return restTemplate;
     }
 
-}
+
+
+
+    @Bean(name="asyncRestTemplate")
+    @LoadBalanced
+    AsyncRestTemplate buildAsyn() throws Exception{
+
+        AsyncRestTemplate template = new AsyncRestTemplate();
+        List<HttpMessageConverter<?>> messageConverters=new ArrayList<HttpMessageConverter<?>>();
+        messageConverters.add(new ByteArrayHttpMessageConverter());
+        messageConverters.add(new StringHttpMessageConverter(Charset.forName("UTF-8")));
+        messageConverters.add(new ResourceHttpMessageConverter());
+        messageConverters.add(new MappingJackson2HttpMessageConverter());
+        messageConverters.add(new MappingJackson2XmlHttpMessageConverter());
+        messageConverters.add(new FormHttpMessageConverter());
+        template.setMessageConverters(messageConverters);
+
+
+
+        ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+        PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
+        cm.setMaxTotal(proerty.getMaxTotal());
+        cm.setDefaultMaxPerRoute(proerty.getDefaultMaxPerRout());
+
+        List headers=new ArrayList();
+        headers.add(new BasicHeader("Accept-Encoding","gzip,deflate"));
+        headers.add(new BasicHeader("Accecp-Language","zh-CN,zh;q=0.8,en;q=0.6"));
+        headers.add(new BasicHeader("Connection","keep-alive"));
+
+        CloseableHttpAsyncClient httpAsyncClients = HttpAsyncClients.custom()
+                .setConnectionManager(cm)
+                .setDefaultHeaders(headers)
+                .build();
+
+        HttpComponentsAsyncClientHttpRequestFactory httpComponentsAsyncClientHttpRequestFactory
+                =new HttpComponentsAsyncClientHttpRequestFactory(httpAsyncClients);
+        httpComponentsAsyncClientHttpRequestFactory.setConnectTimeout(proerty.getConnectTimeout());
+        httpComponentsAsyncClientHttpRequestFactory.setReadTimeout(proerty.getReadTimeout());
+        httpComponentsAsyncClientHttpRequestFactory.setConnectionRequestTimeout(proerty.getConnectionRequestTimeout());
+        httpComponentsAsyncClientHttpRequestFactory.setBufferRequestBody(proerty.isBufferRequestBody());
+
+        template.setAsyncRequestFactory(httpComponentsAsyncClientHttpRequestFactory);
+        return template;
+    }
+
+    }

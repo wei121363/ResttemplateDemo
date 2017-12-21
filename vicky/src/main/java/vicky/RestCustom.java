@@ -6,16 +6,25 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,6 +34,7 @@ import vicky.Data.ReceiveOrder;
 import vicky.util.GZIP;
 import vicky.util.JSONEntity;
 import vicky.util.TransferData;
+import vicky.util.resttemplate.RestClientProperties;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.*;
@@ -44,6 +54,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/")
 @Slf4j
+@Scope("prototype")
 public class RestCustom {
 
 
@@ -69,21 +80,27 @@ public class RestCustom {
 
         URI uri = uriComponents.encode().toUri();
 
+        ClientHttpRequestFactory fa=rs.getRequestFactory();
+
+
         String obj= rs.postForObject(uri,null,String.class);
 
         return obj;
     }
-
-
+@Autowired
+    LoadBalancerInterceptor interceptor;
 
     @RequestMapping("/order")
     public String getOrder()
     {
         try{
 
+
             UriComponents uriComponents = UriComponentsBuilder.fromUriString(
                     host+"getOrder").build();
             URI uri = uriComponents.encode().toUri();
+            rs.getInterceptors().add(interceptor);
+            ClientHttpRequestFactory fa=rs.getRequestFactory();
 
             JSONEntity obj= rs.getForObject(uri,JSONEntity.class);
             //处理单个dto
@@ -427,6 +444,89 @@ public class RestCustom {
 
 
     }
+
+
+        @Autowired
+        @Qualifier("asyncRestTemplate")
+        AsyncRestTemplate asyncRestTemplate;
+
+        /**
+         * 异步调用
+         * @return
+         */
+            @RequestMapping("/async")
+     public String async(){
+        String url = host+"fivetime";//休眠5秒的服务
+        //调用完后立即返回（没有阻塞）
+        ListenableFuture<ResponseEntity<JSONEntity>> forEntity = asyncRestTemplate.getForEntity(url, JSONEntity.class);
+
+
+
+
+                //异步调用后的回调函数
+        forEntity.addCallback(new ListenableFutureCallback<ResponseEntity<JSONEntity>>() {
+            //调用失败
+            @Override
+            public void onFailure(Throwable ex) {
+                log.error("=====rest response faliure======");
+            }
+            //调用成功
+            @Override
+            public void onSuccess(ResponseEntity<JSONEntity> result) {
+                log.info("--->async rest response success----, result = "+result.getBody());
+            }
+        });
+        return "异步调用结束";
+    }
+
+    @RequestMapping("/async1")
+    public String async1()
+    {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Referer", "http://localhost:9091/");
+        MediaType type = MediaType.parseMediaType("application/json; charset=UTF-8");
+        headers.setContentType(type);
+
+
+        Order order = new Order();
+        order.setId(3L);
+        order.setStatus(true);
+        order.setDetail("手机");
+        order.setUpdatetime(new Timestamp(System.currentTimeMillis()));
+        order.setCreateDay(new Date(System.currentTimeMillis()));
+        order.setNum(new Integer(100));
+        order.setMat(new BigDecimal(1.1));
+
+
+        //HttpEntity entity=new HttpEntity(this.getMapper().writeValueAsString(order),headers);
+        HttpEntity entity = new HttpEntity(order, headers);
+
+
+        UriComponents uriComponents = UriComponentsBuilder.fromUriString(
+                host + "addOrder").build();
+        URI uri = uriComponents.encode().toUri();
+
+        ListenableFuture<ResponseEntity<String>> forEntity  = asyncRestTemplate.postForEntity(uri, entity, String.class);
+        //异步调用后的回调函数
+        forEntity.addCallback(new ListenableFutureCallback<ResponseEntity<String>>() {
+            //调用失败
+            @Override
+            public void onFailure(Throwable ex) {
+                log.error("=====rest response faliure======");
+            }
+            //调用成功
+            @Override
+            public void onSuccess(ResponseEntity<String> result) {
+                log.info("--->async rest response success----, result = "+result.getBody());
+            }
+        });
+
+return "ok";
+
+    }
+
+
 
 
 }

@@ -315,4 +315,23 @@ public class RestService {
         return byte1;
 
     }
+
+
+    @RequestMapping("/fivetime")
+    public JSONEntity tenTime(){
+        JSONEntity entity=new JSONEntity();
+
+        try {
+            Thread.sleep(5000);
+            entity.setData(CreasteData.createOrder());
+            entity.setStatus(200);
+
+
+
+        } catch (InterruptedException e) {
+            entity.setStatus(500);
+            e.printStackTrace();
+        }
+        return entity;
+    }
 }
