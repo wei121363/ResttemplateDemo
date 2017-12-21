@@ -139,9 +139,6 @@ public class RestClient {
         restTemplate.setMessageConverters(messageConverters);
          restTemplate.setRequestFactory(httpComponentsClientHttpRequestFactory);
         restTemplate.setErrorHandler(new DefaultResponseErrorHandler());
-        AsyncRestTemplate template = new AsyncRestTemplate();
-
-
 
 
      return restTemplate;
