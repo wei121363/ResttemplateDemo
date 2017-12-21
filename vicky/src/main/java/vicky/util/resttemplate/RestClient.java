@@ -188,6 +188,8 @@ public class RestClient {
         httpComponentsAsyncClientHttpRequestFactory.setConnectionRequestTimeout(proerty.getConnectionRequestTimeout());
         httpComponentsAsyncClientHttpRequestFactory.setBufferRequestBody(proerty.isBufferRequestBody());
 
+
+
         template.setAsyncRequestFactory(httpComponentsAsyncClientHttpRequestFactory);
         return template;
     }
